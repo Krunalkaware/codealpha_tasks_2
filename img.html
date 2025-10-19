@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clean Modern Image Gallery (Sidebar Layout)</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Define configuration for the clean, modern look
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        // Using a deep blue accent for active states
+                        'main-accent': '#1e40af', 
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* ---------------------------------- */
+        /* --- General Transition Styles --- */
+        /* ---------------------------------- */
+        
+        /* The body uses a light gray background */
+        body {
+            background-color: #f3f4f6; /* bg-gray-100 */
+        }
+
+        /* Lightbox backdrop blur for a sleek effect */
+        .lightbox-overlay {
+            transition: opacity 0.3s ease;
+            backdrop-filter: blur(8px);
+        }
+
+        /* Ensure the main gallery area scrolls when content is larger than viewport */
+        .main-content-area {
+            min-height: 100vh;
+        }
+        
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-700 font-sans lg:flex">
+
+    <!-- Fixed Sidebar (Clean Modern Style) / Standard Block (for Mobile) -->
+    <aside class="lg:sticky lg:top-0 lg:h-screen lg:w-64 p-6 m-4 lg:m-0 lg:p-6 bg-white shadow-xl rounded-xl lg:rounded-r-xl lg:rounded-l-none transition-all duration-300">
+        
+        <!-- Header Content -->
+        <h1 class="text-3xl font-extrabold text-gray-900 tracking-wider mb-6">The Exhibit</h1>
+        
+        <h2 class="text-xl font-black text-gray-700 mb-4">Browse</h2>
+        <div id="filter-buttons" class="flex flex-wrap lg:flex-col gap-3">
+            <!-- Filter buttons will be inserted here by JavaScript -->
+        </div>
+    </aside>
+
+    <!-- Main Gallery Section (Scrollable Content) -->
+    <main class="lg:flex-1 main-content-area max-w-7xl mx-auto lg:mx-0 px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Grid Container -->
+        <div id="gallery-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6">
+            <!-- Image Cards will be inserted here by JavaScript -->
+        </div>
+        
+        <!-- No results message -->
+        <div id="no-results" class="hidden text-center py-20">
+            <p class="text-xl text-gray-500">The canvas is currently empty in this selection.</p>
+        </div>
+    </main>
+
+    <!-- Lightbox Modal (Hidden by default) -->
+    <div id="lightbox" class="lightbox-overlay fixed inset-0 bg-black bg-opacity-70 z-50 flex justify-center items-center opacity-0 pointer-events-none">
+        
+        <!-- Close Button -->
+        <button id="lightbox-close" class="absolute top-4 right-4 text-white p-3 rounded-full hover:bg-gray-700 transition-colors z-50">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+
+        <div class="relative w-full h-full flex items-center justify-center p-4">
+            
+            <!-- Previous Button -->
+            <button id="lightbox-prev" class="absolute left-4 lg:left-8 p-3 text-white hover:bg-gray-700 rounded-full transition-colors z-40" aria-label="Previous Image">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+            </button>
+
+            <!-- Main Image container -->
+            <div class="bg-white p-2 rounded-lg shadow-xl max-w-[90vw] max-h-[90vh]">
+                 <img id="lightbox-image" src="" alt="Full-size image" class="rounded object-contain transition-opacity duration-300 max-h-full max-w-full">
+            </div>
+
+            <!-- Next Button -->
+            <button id="lightbox-next" class="absolute right-4 lg:right-8 p-3 text-white hover:bg-gray-700 rounded-full transition-colors z-40" aria-label="Next Image">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Mock image data using placeholder service
+        const images = [
+            { id: 1, category: 'Nature', url: 'https://placehold.co/400x300/4c77d6/ffffff?text=Blue+Lake', alt: 'A deep blue lake surrounded by mountains' },
+            { id: 2, category: 'Cityscape', url: 'https://placehold.co/400x300/f0b343/ffffff?text=Urban+Sunset', alt: 'City buildings during a vibrant sunset' },
+            { id: 3, category: 'Abstract', url: 'https://placehold.co/400x300/9b59b6/ffffff?text=Purple+Flow', alt: 'Abstract purple liquid flow' },
+            { id: 4, category: 'Nature', url: 'https://placehold.co/400x300/2ecc71/ffffff?text=Green+Forest', alt: 'Lush green forest canopy' },
+            { id: 5, category: 'Portrait', url: 'https://placehold.co/400x300/3498db/ffffff?text=Person+Profile', alt: 'Simple profile shot of a person' },
+            { id: 6, category: 'Cityscape', url: 'https://placehold.co/400x300/e74c3c/ffffff?text=Red+Brick', alt: 'Old red brick architecture' },
+            { id: 7, category: 'Abstract', url: 'https://placehold.co/400x300/f39c12/ffffff?text=Digital+Waves', alt: 'Digital noise wave pattern' },
+            { id: 8, category: 'Portrait', url: 'https://placehold.co/400x300/95a5a6/ffffff?text=Monochrome+Face', alt: 'Monochrome close-up of a face' },
+        ];
+
+        const galleryGrid = document.getElementById('gallery-grid');
+        const filterButtonsContainer = document.getElementById('filter-buttons');
+        const noResultsMessage = document.getElementById('no-results');
+        
+        // Lightbox elements
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImage = document.getElementById('lightbox-image');
+        const lightboxClose = document.getElementById('lightbox-close');
+        const lightboxPrev = document.getElementById('lightbox-prev');
+        const lightboxNext = document.getElementById('lightbox-next');
+
+        let currentCategory = 'All';
+        let currentImageIndex = 0;
+        let filteredImages = images;
+
+        /**
+         * Renders the gallery grid based on the current filteredImages array.
+         */
+        function renderGallery() {
+            galleryGrid.innerHTML = '';
+            
+            if (filteredImages.length === 0) {
+                noResultsMessage.classList.remove('hidden');
+                return;
+            }
+            noResultsMessage.classList.add('hidden');
+
+            filteredImages.forEach((img, index) => {
+                const card = document.createElement('div');
+                // Clean, modern card style (bg-white with soft shadow)
+                card.className = 'bg-white relative overflow-hidden rounded-xl shadow-md cursor-pointer hover:shadow-xl transition-shadow duration-300';
+                card.dataset.index = index;
+
+                card.innerHTML = `
+                    <img src="${img.url}" alt="${img.alt}" class="w-full h-auto object-cover aspect-[4/3] rounded-t-xl">
+                    <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                        <!-- Renamed "big box" text to "View Artwork" -->
+                        <span class="text-white text-lg font-bold opacity-0 hover:opacity-100 transition-opacity p-2 rounded">View Artwork</span>
+                    </div>
+                `;
+                
+                // Add click listener to open lightbox
+                card.addEventListener('click', () => openLightbox(index));
+                galleryGrid.appendChild(card);
+            });
+        }
+
+        /**
+         * Renders the category filter buttons.
+         */
+        function renderFilters() {
+            const categories = ['All', ...new Set(images.map(img => img.category))];
+
+            filterButtonsContainer.innerHTML = categories.map(category => {
+                const isActive = category === currentCategory;
+                const baseClasses = 'px-5 py-2 text-sm font-medium rounded-full transition-colors duration-200 focus:outline-none';
+                
+                // Determine classes based on active state for the flat, modern look
+                const classList = isActive 
+                    ? `bg-main-accent text-white hover:bg-main-accent/90` // Active: Accent color background
+                    : `text-gray-700 bg-gray-200 hover:bg-gray-300`;     // Inactive: Light gray background
+
+                return `
+                    <button
+                        data-category="${category}"
+                        class="${baseClasses} ${classList} ${window.innerWidth >= 1024 ? 'w-full text-left justify-start' : ''}"
+                    >
+                        ${category}
+                    </button>
+                `;
+            }).join('');
+
+            // Attach event listeners to the new buttons
+            document.querySelectorAll('#filter-buttons button').forEach(button => {
+                // Only attach listeners to buttons that are not the currently active one (to avoid redundant clicks)
+                if(button.dataset.category !== currentCategory) {
+                    button.addEventListener('click', () => {
+                        setFilter(button.dataset.category);
+                    });
+                }
+            });
+        }
+
+        /**
+         * Sets the filter category and re-renders the gallery.
+         */
+        function setFilter(category) {
+            currentCategory = category;
+            
+            if (category === 'All') {
+                filteredImages = images;
+            } else {
+                filteredImages = images.filter(img => img.category === category);
+            }
+
+            renderFilters(); // Update button styling
+            renderGallery(); // Update visible images
+        }
+
+        /**
+         * Lightbox Functions
+         */
+
+        /**
+         * Opens the lightbox to a specific image index.
+         */
+        function openLightbox(index) {
+            currentImageIndex = index;
+            updateLightbox();
+            lightbox.classList.remove('opacity-0', 'pointer-events-none');
+            lightbox.classList.add('opacity-100', 'pointer-events-auto');
+            document.body.style.overflow = 'hidden'; // Prevent scrolling the body
+        }
+
+        /**
+         * Closes the lightbox.
+         */
+        function closeLightbox() {
+            lightbox.classList.remove('opacity-100', 'pointer-events-auto');
+            lightbox.classList.add('opacity-0', 'pointer-events-none');
+            document.body.style.overflow = ''; // Restore scrolling
+        }
+
+        /**
+         * Updates the lightbox image and button visibility.
+         */
+        function updateLightbox() {
+            const image = filteredImages[currentImageIndex];
+            
+            // Set image source and alt text
+            lightboxImage.src = image.url;
+            lightboxImage.alt = image.alt;
+
+            // Update navigation button visibility
+            lightboxPrev.style.display = currentImageIndex > 0 ? 'block' : 'none';
+            lightboxNext.style.display = currentImageIndex < filteredImages.length - 1 ? 'block' : 'none';
+        }
+
+        /**
+         * Navigates to the next image in the filtered list.
+         */
+        function nextImage() {
+            if (currentImageIndex < filteredImages.length - 1) {
+                currentImageIndex++;
+                updateLightbox();
+            }
+        }
+
+        /**
+         * Navigates to the previous image in the filtered list.
+         */
+        function prevImage() {
+            if (currentImageIndex > 0) {
+                currentImageIndex--;
+                updateLightbox();
+            }
+        }
+
+        // --- Event Listeners ---
+
+        lightboxClose.addEventListener('click', closeLightbox);
+        lightboxPrev.addEventListener('click', prevImage);
+        lightboxNext.addEventListener('click', nextImage);
+
+        // Close lightbox when clicking the backdrop (but not the image/buttons)
+        lightbox.addEventListener('click', (e) => {
+            // Check if the click target is the lightbox itself or the image container
+            if (e.target.id === 'lightbox' || e.target.classList.contains('lightbox-content-wrapper')) {
+                closeLightbox();
+            }
+        });
+
+        // Keyboard navigation for lightbox
+        document.addEventListener('keydown', (e) => {
+            if (lightbox.classList.contains('opacity-100')) {
+                if (e.key === 'ArrowRight') nextImage();
+                if (e.key === 'ArrowLeft') prevImage();
+                if (e.key === 'Escape') closeLightbox();
+            }
+        });
+
+
+        // --- Initialization ---
+
+        // Render everything on load
+        window.onload = () => {
+            setFilter('All'); // Initial render
+        };
+
+    </script>
+</body>
+</html>
